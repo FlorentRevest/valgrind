@@ -4547,6 +4547,8 @@ AC_CONFIG_FILES([
    exp-bbv/tests/arm-linux/Makefile
    exp-dhat/Makefile
    exp-dhat/tests/Makefile
+   cologrind/Makefile
+   cologrind/tests/Makefile
    shared/Makefile
    solaris/Makefile
 ])

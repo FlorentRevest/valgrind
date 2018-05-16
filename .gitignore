@@ -509,6 +509,22 @@
 /exp-dhat/tests/Makefile
 /exp-dhat/tests/Makefile.in
 
+# /cologrind/
+/cologrind/*.dSYM
+/cologrind/.deps
+/cologrind/cologrind-*-darwin
+/cologrind/cologrind-*-linux
+/cologrind/cologrind-*-solaris
+/cologrind/Makefile
+/cologrind/Makefile.in
+/cologrind/vgpreload_cologrind-*-linux.so
+/cologrind/vgpreload_cologrind-*-darwin.so
+/cologrind/vgpreload_cologrind-*-solaris.so
+
+# /cologrind/tests/
+/cologrind/tests/Makefile
+/cologrind/tests/Makefile.in
+
 # /exp-sgcheck/
 /exp-sgcheck/*.dSYM
 /exp-sgcheck/.deps
