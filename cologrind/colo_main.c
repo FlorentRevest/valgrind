@@ -370,6 +370,34 @@ static void colo_fini(Int exit_status)
 }
 
 //------------------------------------------------------------//
+//--- Arguments                                            ---//
+//------------------------------------------------------------//
+
+static Bool colo_process_cmd_line_option(const HChar* arg)
+{
+    const HChar* tmp_str;
+    if(VG_STR_CLO(arg, "--cologrind-out-file", tmp_str)) {
+        output = VG_(fopen)(tmp_str, VKI_O_CREAT|VKI_O_WRONLY, VKI_S_IRUSR|VKI_S_IWUSR);
+        VG_(fprintf)(output, "digraph {\n");
+    }
+    return True;
+}
+
+static void colo_print_usage(void)
+{
+    VG_(printf)(
+"    --cologrind-out-file=path       generates a dot file in path\n"
+    );
+}
+
+static void colo_print_debug_usage(void)
+{
+    VG_(printf)(
+"    (none)\n"
+    );
+}
+
+//------------------------------------------------------------//
 //--- Initialisation                                       ---//
 //------------------------------------------------------------//
 
@@ -387,16 +415,15 @@ static void colo_pre_clo_init(void)
     VG_(basic_tool_funcs)          (colo_post_clo_init,
             colo_instrument,
             colo_fini);
+    VG_(needs_command_line_options)(colo_process_cmd_line_option,
+                                    colo_print_usage,
+                                    colo_print_debug_usage);
 //    VG_(track_pre_mem_read)        ( colo_handle_noninsn_read );
 //    VG_(track_post_mem_write)      ( colo_handle_noninsn_write );
-
-    output = VG_(fopen)("output.dot", VKI_O_CREAT|VKI_O_WRONLY, VKI_S_IRUSR|VKI_S_IWUSR);
 
     visited_edges = VG_(OSetGen_Create)(/*keyOff*/0,
                                         edgesCmp,
                                         VG_(malloc), "ve.1", VG_(free));
-
-    VG_(fprintf)(output, "digraph {\n");
 }
 
 VG_DETERMINE_INTERFACE_VERSION(colo_pre_clo_init)
