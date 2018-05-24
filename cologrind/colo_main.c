@@ -28,6 +28,7 @@
 */
 
 #include "pub_tool_basics.h"
+#include "pub_tool_hashtable.h"
 #include "pub_tool_libcbase.h"
 #include "pub_tool_libcassert.h"
 #include "pub_tool_libcprint.h"
@@ -40,6 +41,7 @@
 #include "pub_tool_vki.h"
 
 static VgFile *output;
+static VgFile *graphsize;
 
 //------------------------------------------------------------//
 //--- Pages accesses storage                               ---//
@@ -48,6 +50,31 @@ static VgFile *output;
 
 #define PAGE_SIZE   4096
 static Addr prev_page;
+static VgHashTable* visited_nodes = NULL;
+
+static UInt nodes_count = 0;
+
+typedef
+   struct {
+      void*       next;
+      Addr        key;
+      UInt        node;
+   }
+   PageToNode;
+
+UInt nodeNbForPage(Addr page)
+{
+    PageToNode *p2n = VG_(HT_lookup)(visited_nodes, page);
+    if(!p2n) {
+        p2n = VG_(malloc)("pagetonode", sizeof(PageToNode));
+        p2n->key = page;
+        p2n->node = nodes_count;
+        VG_(HT_add_node)(visited_nodes, p2n);
+        nodes_count = nodes_count + 1;
+    }
+
+    return p2n->node;
+}
 
 typedef
    struct { 
@@ -91,7 +118,7 @@ void handle_mem_access ( Addr addr )
         Edge *new_elem = (Edge*) VG_(OSetGen_AllocNode)( visited_edges, sizeof(Edge) );
         *new_elem = e;        
 
-        VG_(fprintf)(output, "    %ld -> %ld;\n", prev_page, page);
+        VG_(fprintf)(output, "    %ld -> %ld;\n", nodeNbForPage(prev_page), nodeNbForPage(page));
         VG_(OSetGen_Insert)( visited_edges, new_elem );
     }
 
@@ -367,6 +394,11 @@ static void colo_fini(Int exit_status)
 
     VG_(fprintf)(output, "}");
     VG_(fclose)(output);
+
+    VG_(fprintf)(graphsize, "%d\n", nodes_count);
+    VG_(fclose)(graphsize);
+
+    VG_(HT_destruct)(visited_nodes, VG_(free));
 }
 
 //------------------------------------------------------------//
@@ -377,7 +409,7 @@ static Bool colo_process_cmd_line_option(const HChar* arg)
 {
     const HChar* tmp_str;
     if(VG_STR_CLO(arg, "--cologrind-out-file", tmp_str)) {
-        output = VG_(fopen)(tmp_str, VKI_O_CREAT|VKI_O_WRONLY, VKI_S_IRUSR|VKI_S_IWUSR);
+        output = VG_(fopen)(tmp_str, VKI_O_CREAT|VKI_O_WRONLY|VKI_O_TRUNC, VKI_S_IRUSR|VKI_S_IWUSR);
         VG_(fprintf)(output, "digraph {\n");
     }
     return True;
@@ -421,9 +453,12 @@ static void colo_pre_clo_init(void)
 //    VG_(track_pre_mem_read)        ( colo_handle_noninsn_read );
 //    VG_(track_post_mem_write)      ( colo_handle_noninsn_write );
 
+    visited_nodes = VG_(HT_construct)("visited_nodes");
     visited_edges = VG_(OSetGen_Create)(/*keyOff*/0,
                                         edgesCmp,
                                         VG_(malloc), "ve.1", VG_(free));
+
+    graphsize = VG_(fopen)("graphsize", VKI_O_CREAT|VKI_O_WRONLY, VKI_S_IRUSR|VKI_S_IWUSR);
 }
 
 VG_DETERMINE_INTERFACE_VERSION(colo_pre_clo_init)
