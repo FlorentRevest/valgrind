@@ -118,7 +118,7 @@ void handle_mem_access ( Addr addr )
         Edge *new_elem = (Edge*) VG_(OSetGen_AllocNode)( visited_edges, sizeof(Edge) );
         *new_elem = e;        
 
-        VG_(fprintf)(output, "    %ld -> %ld;\n", nodeNbForPage(prev_page), nodeNbForPage(page));
+        VG_(fprintf)(output, "    %ld -> %ld [label=1];\n", nodeNbForPage(prev_page), nodeNbForPage(page));
         VG_(OSetGen_Insert)( visited_edges, new_elem );
     }
 
